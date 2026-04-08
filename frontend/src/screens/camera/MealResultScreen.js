@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { colors, spacing, borderRadius, fontSize } from '../../theme/theme';
 
-const API_HOST = 'http://10.121.23.186:5000';
+const API_HOST = 'https://cal-ai-4d0f.onrender.com';
 
 const MealResultScreen = ({ route, navigation }) => {
   const { meal } = route.params;

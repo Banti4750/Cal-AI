@@ -13,13 +13,13 @@ A mobile calorie tracking app that uses AI to analyze food photos and automatica
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Mobile App | React Native (Expo) |
-| Backend API | Node.js, Express |
-| Database | MongoDB (Mongoose) |
-| AI Model | Google Gemini 2.5 Flash |
-| Auth | JWT + bcrypt |
+| Layer       | Technology              |
+| ----------- | ----------------------- |
+| Mobile App  | React Native (Expo)     |
+| Backend API | Node.js, Express        |
+| Database    | MongoDB (Mongoose)      |
+| AI Model    | Google Gemini 2.5 Flash |
+| Auth        | JWT + bcrypt            |
 
 ## Project Structure
 
@@ -86,7 +86,7 @@ npm install
 Update the API URL in `src/services/api.js` with your machine's local IP:
 
 ```js
-const API_BASE_URL = 'http://YOUR_LOCAL_IP:5000/api';
+const API_BASE_URL = "https://cal-ai-4d0f.onrender.com/api";
 ```
 
 Start Expo:
@@ -108,27 +108,30 @@ netsh advfirewall firewall add rule name="CalAI Backend" dir=in action=allow pro
 ## API Endpoints
 
 ### Auth
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/signup` | Create account |
-| POST | `/api/auth/signin` | Login |
-| GET | `/api/auth/profile` | Get user profile |
-| PUT | `/api/auth/goals` | Update daily goals |
+
+| Method | Endpoint            | Description        |
+| ------ | ------------------- | ------------------ |
+| POST   | `/api/auth/signup`  | Create account     |
+| POST   | `/api/auth/signin`  | Login              |
+| GET    | `/api/auth/profile` | Get user profile   |
+| PUT    | `/api/auth/goals`   | Update daily goals |
 
 ### Meals
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/meals` | Upload meal photo (multipart/form-data) |
-| GET | `/api/meals?date=YYYY-MM-DD` | Get meals by date |
-| GET | `/api/meals/:id` | Get single meal |
-| DELETE | `/api/meals/:id` | Delete meal |
+
+| Method | Endpoint                     | Description                             |
+| ------ | ---------------------------- | --------------------------------------- |
+| POST   | `/api/meals`                 | Upload meal photo (multipart/form-data) |
+| GET    | `/api/meals?date=YYYY-MM-DD` | Get meals by date                       |
+| GET    | `/api/meals/:id`             | Get single meal                         |
+| DELETE | `/api/meals/:id`             | Delete meal                             |
 
 ### Analytics
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/analytics/daily?date=` | Daily summary |
-| GET | `/api/analytics/weekly?weekOf=` | Weekly breakdown |
-| GET | `/api/analytics/monthly?month=&year=` | Monthly breakdown |
+
+| Method | Endpoint                              | Description       |
+| ------ | ------------------------------------- | ----------------- |
+| GET    | `/api/analytics/daily?date=`          | Daily summary     |
+| GET    | `/api/analytics/weekly?weekOf=`       | Weekly breakdown  |
+| GET    | `/api/analytics/monthly?month=&year=` | Monthly breakdown |
 
 ## How It Works
 

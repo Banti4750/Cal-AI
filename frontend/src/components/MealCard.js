@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { colors, borderRadius, fontSize, spacing } from '../theme/theme';
 
-const API_HOST = 'http://10.121.23.186:5000';
+const API_HOST = 'https://cal-ai-4d0f.onrender.com';
 
 const MealCard = ({ meal, onPress, onDelete }) => {
   const foodNames = meal.foods.map((f) => f.name).join(', ');
