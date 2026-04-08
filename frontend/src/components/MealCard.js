@@ -1,30 +1,39 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, Image, StyleSheet, Pressable, Platform } from 'react-native';
 import { colors, borderRadius, fontSize, spacing } from '../theme/theme';
 
 const API_HOST = 'https://cal-ai-4d0f.onrender.com';
 
-const MealCard = ({ meal, onPress, onDelete }) => {
+const MealCard = ({ meal, onPress }) => {
   const foodNames = meal.foods.map((f) => f.name).join(', ');
   const displayName = foodNames.length > 30 ? foodNames.substring(0, 27) + '...' : foodNames;
   const time = new Date(meal.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+  const imageUri = meal.imageUrl
+    ? (Platform.OS === 'android' && !meal.imageUrl.startsWith('file://')
+      ? `${API_HOST}${meal.imageUrl}`
+      : `${API_HOST}${meal.imageUrl}`)
+    : null;
+
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
-      <Image source={{ uri: `${API_HOST}${meal.imageUrl}` }} style={styles.image} />
+    <Pressable
+      style={({ pressed }) => [
+        styles.card,
+        pressed && styles.cardPressed,
+      ]}
+      onPress={onPress}
+    >
+      {imageUri && (
+        <Image source={{ uri: imageUri }} style={styles.image} />
+      )}
       <View style={styles.info}>
         <Text style={styles.name} numberOfLines={1}>{displayName}</Text>
-        <View style={styles.macroRow}>
-          <Text style={styles.calories}>🔥 {Math.round(meal.totals.calories)} kcal</Text>
-        </View>
-        <View style={styles.macroRow}>
-          <Text style={[styles.macro, { color: colors.protein }]}>⚡ {Math.round(meal.totals.protein)}g</Text>
-          <Text style={[styles.macro, { color: colors.carbs }]}>🌾 {Math.round(meal.totals.carbs)}g</Text>
-          <Text style={[styles.macro, { color: colors.fat }]}>💧 {Math.round(meal.totals.fat)}g</Text>
-        </View>
+        <Text style={styles.time}>{time}</Text>
       </View>
-      <Text style={styles.time}>{time}</Text>
-    </TouchableOpacity>
+      <View style={styles.calBadge}>
+        <Text style={styles.calText}>{Math.round(meal.totals.calories)} kcal</Text>
+      </View>
+    </Pressable>
   );
 };
 
@@ -37,11 +46,15 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
+  cardPressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.97 }],
+  },
   image: {
     width: 60,
     height: 60,
     borderRadius: borderRadius.md,
-    backgroundColor: colors.surfaceLight,
+    backgroundColor: colors.surfaceRaised,
   },
   info: {
     flex: 1,
@@ -49,24 +62,24 @@ const styles = StyleSheet.create({
   },
   name: {
     color: colors.text,
-    fontSize: fontSize.md,
+    fontSize: 15,
     fontWeight: '600',
-  },
-  macroRow: {
-    flexDirection: 'row',
-    marginTop: 4,
-    gap: 12,
-  },
-  calories: {
-    color: colors.text,
-    fontSize: fontSize.sm,
-  },
-  macro: {
-    fontSize: fontSize.xs,
   },
   time: {
     color: colors.textSecondary,
     fontSize: fontSize.xs,
+    marginTop: 4,
+  },
+  calBadge: {
+    backgroundColor: colors.accentSubtle,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  calText: {
+    color: colors.accent,
+    fontSize: fontSize.xs,
+    fontWeight: '700',
   },
 });
 

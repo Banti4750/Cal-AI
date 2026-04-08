@@ -1,24 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, Dimensions } from 'react-native';
+import {
+  View, Text, ScrollView, StyleSheet, Pressable, ActivityIndicator, Dimensions,
+} from 'react-native';
 import { BarChart, LineChart } from 'react-native-chart-kit';
-import { colors, spacing, borderRadius, fontSize } from '../../theme/theme';
+import * as Haptics from 'expo-haptics';
+import { colors, spacing, borderRadius, fontSize, TAB_BAR_TOTAL_HEIGHT } from '../../theme/theme';
 import { analyticsAPI } from '../../services/api';
 
-const screenWidth = Dimensions.get('window').width - 32;
+const screenWidth = Dimensions.get('window').width - 40;
 
 const chartConfig = {
   backgroundColor: colors.surface,
   backgroundGradientFrom: colors.surface,
   backgroundGradientTo: colors.surface,
   decimalPlaces: 0,
-  color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-  labelColor: (opacity = 1) => `rgba(156, 163, 175, ${opacity})`,
+  color: (opacity = 1) => `rgba(200, 255, 0, ${opacity})`,
+  labelColor: () => colors.textSecondary,
   propsForBackgroundLines: {
-    strokeDasharray: '',
-    stroke: colors.surfaceLight,
+    stroke: colors.ringTrack,
     strokeWidth: 1,
   },
   barPercentage: 0.6,
+  barRadius: 8,
 };
 
 const AnalyticsScreen = () => {
@@ -51,142 +54,162 @@ const AnalyticsScreen = () => {
 
   const getWeeklyChartData = () => {
     if (!data?.days) return null;
-    const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     return {
-      labels: dayLabels,
-      datasets: [{
-        data: data.days.map((d) => d.totals.calories),
-      }],
+      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      datasets: [{ data: data.days.map((d) => d.totals.calories || 0) }],
     };
   };
 
   const getMonthlyChartData = () => {
     if (!data?.days) return null;
     const labels = data.days.filter((_, i) => i % 5 === 0).map((d) => {
-      const day = parseInt(d.date.split('-')[2]);
-      return `${day}`;
+      return parseInt(d.date.split('-')[2]).toString();
     });
     return {
       labels,
       datasets: [{
-        data: data.days.map((d) => d.totals.calories),
-        color: (opacity = 1) => `rgba(74, 222, 128, ${opacity})`,
+        data: data.days.map((d) => d.totals.calories || 0),
+        color: (opacity = 1) => `rgba(200, 255, 0, ${opacity})`,
         strokeWidth: 2,
       }],
     };
   };
 
   const avg = data?.average || { calories: 0, protein: 0, carbs: 0, fat: 0 };
-  const goal = data?.goal || { calories: 2500, protein: 150, carbs: 250, fat: 65 };
+  const days = data?.days || [];
+
+  // Compute summary stats
+  const bestDay = days.length > 0
+    ? Math.round(Math.max(...days.map(d => d.totals.calories)))
+    : 0;
+  const totalLogged = days.reduce((sum, d) => sum + (d.totals.calories > 0 ? 1 : 0), 0);
+  const streak = (() => {
+    let count = 0;
+    for (let i = days.length - 1; i >= 0; i--) {
+      if (days[i].totals.calories > 0) count++;
+      else break;
+    }
+    return count;
+  })();
+
+  const minChartWidth = Math.max(screenWidth - 32, 320);
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.screenTitle}>Analytics</Text>
 
-        {/* View Toggle */}
+        {/* Toggle */}
         <View style={styles.toggleRow}>
           {['weekly', 'monthly'].map((v) => (
-            <TouchableOpacity
+            <Pressable
               key={v}
-              style={[styles.toggleBtn, view === v && styles.toggleBtnActive]}
-              onPress={() => setView(v)}
+              style={({ pressed }) => [
+                styles.toggleBtn,
+                view === v && styles.toggleBtnActive,
+                pressed && { opacity: 0.7 },
+              ]}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setView(v);
+              }}
             >
               <Text style={[styles.toggleText, view === v && styles.toggleTextActive]}>
                 {v.charAt(0).toUpperCase() + v.slice(1)}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           ))}
         </View>
 
         {loading ? (
-          <ActivityIndicator size="large" color={colors.text} style={{ marginTop: 40 }} />
+          <ActivityIndicator size="large" color={colors.accent} style={{ marginTop: 40 }} />
         ) : (
           <>
             {/* Calories Chart */}
             <View style={styles.chartCard}>
-              <Text style={styles.chartTitle}>Calories</Text>
-              {view === 'weekly' && getWeeklyChartData() ? (
-                <BarChart
-                  data={getWeeklyChartData()}
-                  width={screenWidth - 32}
-                  height={200}
-                  chartConfig={chartConfig}
-                  fromZero
-                  showValuesOnTopOfBars
-                  withInnerLines={false}
-                  style={styles.chart}
-                />
-              ) : getMonthlyChartData() ? (
-                <LineChart
-                  data={getMonthlyChartData()}
-                  width={screenWidth - 32}
-                  height={200}
-                  chartConfig={chartConfig}
-                  bezier
-                  withInnerLines={false}
-                  withDots={false}
-                  style={styles.chart}
-                />
-              ) : null}
+              <Text style={styles.chartTitle}>CALORIES</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {view === 'weekly' && getWeeklyChartData() ? (
+                  <BarChart
+                    data={getWeeklyChartData()}
+                    width={minChartWidth}
+                    height={200}
+                    chartConfig={chartConfig}
+                    fromZero
+                    showValuesOnTopOfBars
+                    withInnerLines={true}
+                    style={styles.chart}
+                  />
+                ) : getMonthlyChartData() ? (
+                  <LineChart
+                    data={getMonthlyChartData()}
+                    width={minChartWidth}
+                    height={200}
+                    chartConfig={chartConfig}
+                    bezier
+                    withInnerLines={true}
+                    withDots={false}
+                    style={styles.chart}
+                  />
+                ) : null}
+              </ScrollView>
             </View>
 
-            {/* Average Summary */}
-            <View style={styles.summaryCard}>
-              <Text style={styles.summaryTitle}>
-                {view === 'weekly' ? 'Weekly' : 'Monthly'} Average
-              </Text>
-              <View style={styles.summaryGrid}>
-                <SummaryItem label="Calories" value={avg.calories} unit="kcal" goal={goal.calories} color={colors.text} />
-                <SummaryItem label="Protein" value={avg.protein} unit="g" goal={goal.protein} color={colors.protein} />
-                <SummaryItem label="Carbs" value={avg.carbs} unit="g" goal={goal.carbs} color={colors.carbs} />
-                <SummaryItem label="Fat" value={avg.fat} unit="g" goal={goal.fat} color={colors.fat} />
+            {/* Summary Stats 2x2 Grid */}
+            <View style={styles.summaryGrid}>
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryValue}>{Math.round(avg.calories)}</Text>
+                <Text style={styles.summaryLabel}>AVG DAILY</Text>
+              </View>
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryValue}>{bestDay}</Text>
+                <Text style={styles.summaryLabel}>BEST DAY</Text>
+              </View>
+              <View style={styles.summaryItem}>
+                <Text style={styles.streakValue}>{streak}</Text>
+                <Text style={styles.summaryLabel}>STREAK</Text>
+              </View>
+              <View style={styles.summaryItem}>
+                <Text style={styles.summaryValue}>{totalLogged}</Text>
+                <Text style={styles.summaryLabel}>TOTAL LOGGED</Text>
               </View>
             </View>
 
-            {/* Macro Breakdown Chart */}
+            {/* Protein Trend */}
             <View style={styles.chartCard}>
-              <Text style={styles.chartTitle}>Protein Trend</Text>
+              <Text style={styles.chartTitle}>PROTEIN TREND</Text>
               {data?.days && (
-                <LineChart
-                  data={{
-                    labels: view === 'weekly'
-                      ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-                      : data.days.filter((_, i) => i % 5 === 0).map((d) => parseInt(d.date.split('-')[2]).toString()),
-                    datasets: [
-                      {
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <LineChart
+                    data={{
+                      labels: view === 'weekly'
+                        ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+                        : data.days.filter((_, i) => i % 5 === 0).map((d) =>
+                            parseInt(d.date.split('-')[2]).toString()
+                          ),
+                      datasets: [{
                         data: data.days.map((d) => d.totals.protein || 0),
-                        color: (opacity = 1) => `rgba(239, 68, 68, ${opacity})`,
+                        color: (opacity = 1) => `rgba(96, 165, 250, ${opacity})`,
                         strokeWidth: 2,
-                      },
-                    ],
-                  }}
-                  width={screenWidth - 32}
-                  height={180}
-                  chartConfig={chartConfig}
-                  bezier
-                  withInnerLines={false}
-                  withDots={false}
-                  style={styles.chart}
-                />
+                      }],
+                    }}
+                    width={minChartWidth}
+                    height={180}
+                    chartConfig={{
+                      ...chartConfig,
+                      color: (opacity = 1) => `rgba(96, 165, 250, ${opacity})`,
+                    }}
+                    bezier
+                    withInnerLines={false}
+                    withDots={false}
+                    style={styles.chart}
+                  />
+                </ScrollView>
               )}
             </View>
           </>
         )}
       </ScrollView>
-    </View>
-  );
-};
-
-const SummaryItem = ({ label, value, unit, goal, color }) => {
-  const pct = goal > 0 ? Math.round((value / goal) * 100) : 0;
-  return (
-    <View style={styles.summaryItem}>
-      <Text style={styles.summaryLabel}>{label}</Text>
-      <Text style={[styles.summaryValue, { color }]}>
-        {Math.round(value)} {unit}
-      </Text>
-      <Text style={styles.summaryPct}>{pct}% of goal</Text>
     </View>
   );
 };
@@ -205,9 +228,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   scrollContent: {
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: 20,
     paddingTop: 60,
-    paddingBottom: 100,
+    paddingBottom: TAB_BAR_TOTAL_HEIGHT,
   },
   screenTitle: {
     color: colors.text,
@@ -217,8 +240,8 @@ const styles = StyleSheet.create({
   },
   toggleRow: {
     flexDirection: 'row',
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
+    backgroundColor: colors.surfaceRaised,
+    borderRadius: borderRadius.pill,
     padding: 4,
     marginBottom: spacing.lg,
   },
@@ -226,70 +249,66 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 10,
     alignItems: 'center',
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.pill,
   },
   toggleBtnActive: {
-    backgroundColor: colors.surfaceLight,
+    backgroundColor: colors.accent,
   },
   toggleText: {
-    color: colors.textMuted,
+    color: colors.textSecondary,
     fontSize: fontSize.sm,
     fontWeight: '600',
   },
   toggleTextActive: {
-    color: colors.text,
+    color: '#000000',
   },
   chartCard: {
     backgroundColor: colors.surface,
     borderRadius: borderRadius.xl,
-    padding: spacing.md,
+    padding: 20,
     marginBottom: spacing.md,
   },
   chartTitle: {
-    color: colors.text,
-    fontSize: fontSize.md,
-    fontWeight: '700',
+    color: colors.textSecondary,
+    fontSize: fontSize.xxs,
+    fontWeight: '600',
+    letterSpacing: 3,
     marginBottom: spacing.sm,
   },
   chart: {
     borderRadius: borderRadius.md,
-  },
-  summaryCard: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.xl,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  summaryTitle: {
-    color: colors.text,
-    fontSize: fontSize.md,
-    fontWeight: '700',
-    marginBottom: spacing.md,
+    marginLeft: -16,
   },
   summaryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.md,
+    marginBottom: spacing.md,
   },
   summaryItem: {
-    width: '46%',
-    backgroundColor: colors.surfaceLight,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
+    width: '47%',
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.xl,
+    padding: 20,
+  },
+  summaryValue: {
+    color: colors.text,
+    fontSize: fontSize.xl,
+    fontWeight: '800',
+    letterSpacing: -1,
+  },
+  streakValue: {
+    color: colors.warning,
+    fontSize: fontSize.xl,
+    fontWeight: '800',
+    letterSpacing: -1,
   },
   summaryLabel: {
     color: colors.textSecondary,
-    fontSize: fontSize.xs,
-  },
-  summaryValue: {
-    fontSize: fontSize.lg,
-    fontWeight: '700',
-    marginTop: 4,
-  },
-  summaryPct: {
-    color: colors.textMuted,
-    fontSize: fontSize.xs,
-    marginTop: 2,
+    fontSize: fontSize.xxs,
+    fontWeight: '600',
+    letterSpacing: 3,
+    marginTop: spacing.xs,
   },
 });
 

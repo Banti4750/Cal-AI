@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ScrollView,
+  View, Text, StyleSheet, Pressable, TextInput, Alert, ScrollView,
 } from 'react-native';
-import { colors, spacing, borderRadius, fontSize } from '../../theme/theme';
+import { colors, spacing, borderRadius, fontSize, TAB_BAR_TOTAL_HEIGHT } from '../../theme/theme';
 import { useAuth } from '../../context/AuthContext';
 import { authAPI } from '../../services/api';
 
@@ -27,7 +27,6 @@ const ProfileScreen = () => {
       const res = await authAPI.updateGoals(numGoals);
       updateUser(res.data.user);
       setEditing(false);
-      Alert.alert('Success', 'Daily goals updated!');
     } catch (error) {
       Alert.alert('Error', 'Failed to update goals');
     }
@@ -35,7 +34,7 @@ const ProfileScreen = () => {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.screenTitle}>Settings</Text>
 
         {/* User Info */}
@@ -48,12 +47,15 @@ const ProfileScreen = () => {
         </View>
 
         {/* Daily Goals */}
-        <View style={styles.card}>
+        <View style={[styles.card, { alignItems: 'stretch' }]}>
           <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Daily Goals</Text>
-            <TouchableOpacity onPress={() => editing ? handleSaveGoals() : setEditing(true)}>
+            <Text style={styles.cardTitle}>DAILY GOALS</Text>
+            <Pressable
+              onPress={() => editing ? handleSaveGoals() : setEditing(true)}
+              style={({ pressed }) => [pressed && { opacity: 0.7 }]}
+            >
               <Text style={styles.editBtn}>{editing ? 'Save' : 'Edit'}</Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
 
           <GoalRow
@@ -90,9 +92,12 @@ const ProfileScreen = () => {
         </View>
 
         {/* Sign Out */}
-        <TouchableOpacity style={styles.signOutBtn} onPress={signout}>
+        <Pressable
+          style={({ pressed }) => [styles.signOutBtn, pressed && { opacity: 0.7 }]}
+          onPress={signout}
+        >
           <Text style={styles.signOutText}>Sign Out</Text>
-        </TouchableOpacity>
+        </Pressable>
       </ScrollView>
     </View>
   );
@@ -108,6 +113,7 @@ const GoalRow = ({ label, value, unit, color, editing, onChange }) => (
           value={value}
           onChangeText={onChange}
           keyboardType="numeric"
+          placeholderTextColor={colors.textMuted}
         />
         <Text style={styles.goalUnit}>{unit}</Text>
       </View>
@@ -123,9 +129,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   scrollContent: {
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: 20,
     paddingTop: 60,
-    paddingBottom: 100,
+    paddingBottom: TAB_BAR_TOTAL_HEIGHT,
   },
   screenTitle: {
     color: colors.text,
@@ -136,7 +142,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
     borderRadius: borderRadius.xl,
-    padding: spacing.lg,
+    padding: 20,
     marginBottom: spacing.md,
     alignItems: 'center',
   },
@@ -144,13 +150,13 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: colors.surfaceLight,
+    backgroundColor: colors.surfaceRaised,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,
   },
   avatarText: {
-    color: colors.text,
+    color: colors.accent,
     fontSize: 28,
     fontWeight: '700',
   },
@@ -172,12 +178,13 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   cardTitle: {
-    color: colors.text,
-    fontSize: fontSize.md,
-    fontWeight: '700',
+    color: colors.textSecondary,
+    fontSize: fontSize.xxs,
+    fontWeight: '600',
+    letterSpacing: 3,
   },
   editBtn: {
-    color: colors.primary,
+    color: colors.accent,
     fontSize: fontSize.sm,
     fontWeight: '600',
   },
@@ -186,13 +193,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: colors.surfaceLight,
+    borderBottomColor: colors.border,
   },
   goalLabel: {
     color: colors.text,
     fontSize: fontSize.md,
+    fontWeight: '500',
   },
   goalValue: {
     color: colors.textSecondary,
@@ -204,7 +212,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   goalInput: {
-    backgroundColor: colors.surfaceLight,
+    backgroundColor: colors.surfaceRaised,
     borderRadius: borderRadius.sm,
     paddingHorizontal: 12,
     paddingVertical: 6,

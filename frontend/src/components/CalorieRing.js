@@ -1,31 +1,48 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Animated } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { colors, fontSize } from '../theme/theme';
 
-const CalorieRing = ({ consumed, goal, size = 180, strokeWidth = 12 }) => {
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
+const CalorieRing = ({ consumed, goal, size = 200, strokeWidth = 10 }) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const remaining = Math.max(0, goal - consumed);
   const progress = Math.min(consumed / goal, 1);
-  const strokeDashoffset = circumference * (1 - progress);
+
+  const animValue = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    animValue.setValue(0);
+    Animated.timing(animValue, {
+      toValue: progress,
+      duration: 1200,
+      useNativeDriver: false,
+    }).start();
+  }, [consumed, goal]);
+
+  const strokeDashoffset = animValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [circumference, 0],
+  });
 
   return (
     <View style={styles.container}>
-      <Svg width={size} height={size} style={styles.svg}>
+      <Svg width={size} height={size}>
         <Circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke={colors.surfaceLight}
+          stroke={colors.ringTrack}
           strokeWidth={strokeWidth}
           fill="none"
         />
-        <Circle
+        <AnimatedCircle
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke={colors.calorieRing}
+          stroke={colors.ring}
           strokeWidth={strokeWidth}
           fill="none"
           strokeDasharray={circumference}
@@ -37,7 +54,7 @@ const CalorieRing = ({ consumed, goal, size = 180, strokeWidth = 12 }) => {
       </Svg>
       <View style={styles.textContainer}>
         <Text style={styles.calorieNumber}>{remaining}</Text>
-        <Text style={styles.calorieLabel}>Calories left</Text>
+        <Text style={styles.calorieLabel}>kcal</Text>
       </View>
     </View>
   );
@@ -48,22 +65,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  svg: {
-    transform: [{ rotate: '0deg' }],
-  },
   textContainer: {
     position: 'absolute',
     alignItems: 'center',
   },
   calorieNumber: {
     color: colors.text,
-    fontSize: fontSize.xxl,
-    fontWeight: '700',
+    fontSize: fontSize.display,
+    fontWeight: '800',
+    letterSpacing: -2,
   },
   calorieLabel: {
     color: colors.textSecondary,
     fontSize: fontSize.sm,
     marginTop: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 3,
   },
 });
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView,
+  View, Text, TextInput, Pressable, StyleSheet, KeyboardAvoidingView,
   Platform, ActivityIndicator, Alert,
 } from 'react-native';
 import { colors, spacing, borderRadius, fontSize } from '../../theme/theme';
@@ -38,7 +38,7 @@ const SignUpScreen = ({ navigation }) => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.inner}>
-        <Text style={styles.logo}>🍎 Cal AI</Text>
+        <Text style={styles.logo}>Cal AI</Text>
         <Text style={styles.subtitle}>Create your account</Text>
 
         <View style={styles.form}>
@@ -67,20 +67,24 @@ const SignUpScreen = ({ navigation }) => {
             secureTextEntry
           />
 
-          <TouchableOpacity style={styles.button} onPress={handleSignUp} disabled={loading}>
+          <Pressable
+            style={({ pressed }) => [styles.button, pressed && { opacity: 0.7, transform: [{ scale: 0.97 }] }]}
+            onPress={handleSignUp}
+            disabled={loading}
+          >
             {loading ? (
-              <ActivityIndicator color={colors.background} />
+              <ActivityIndicator color="#000000" />
             ) : (
               <Text style={styles.buttonText}>Create Account</Text>
             )}
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <Pressable onPress={() => navigation.goBack()}>
           <Text style={styles.link}>
             Already have an account? <Text style={styles.linkBold}>Sign In</Text>
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </KeyboardAvoidingView>
   );
@@ -94,17 +98,18 @@ const styles = StyleSheet.create({
   inner: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: 20,
   },
   logo: {
-    fontSize: 40,
+    fontSize: fontSize.display,
     fontWeight: '800',
     color: colors.text,
     textAlign: 'center',
+    letterSpacing: -2,
   },
   subtitle: {
     color: colors.textSecondary,
-    fontSize: fontSize.md,
+    fontSize: fontSize.sm,
     textAlign: 'center',
     marginTop: spacing.sm,
     marginBottom: spacing.xxl,
@@ -114,7 +119,7 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: colors.inputBg,
-    borderRadius: borderRadius.md,
+    borderRadius: 14,
     padding: spacing.md,
     color: colors.text,
     fontSize: fontSize.md,
@@ -122,16 +127,17 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   button: {
-    backgroundColor: colors.text,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
+    backgroundColor: colors.accent,
+    borderRadius: 14,
+    height: 52,
     alignItems: 'center',
+    justifyContent: 'center',
     marginTop: spacing.sm,
   },
   buttonText: {
-    color: colors.background,
+    color: '#000000',
     fontSize: fontSize.md,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   link: {
     color: colors.textSecondary,
@@ -140,7 +146,7 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
   },
   linkBold: {
-    color: colors.text,
+    color: colors.accent,
     fontWeight: '600',
   },
 });
