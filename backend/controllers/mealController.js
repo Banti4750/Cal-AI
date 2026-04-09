@@ -53,7 +53,7 @@ exports.getMeals = async (req, res) => {
     if (date) query.date = date;
 
     const meals = await Meal.find(query).sort({ createdAt: -1 });
-    await redisClient.set(cacheKey, JSON.stringify(meals), 'EX', 3600);
+    await redisClient.set(cacheKey, JSON.stringify(meals), 'EX', 180);
     res.json({ meals });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -73,7 +73,7 @@ exports.getMeal = async (req, res) => {
     const meal = await Meal.findOne({ _id: req.params.id, user: req.user._id });
 
     if (!meal) return res.status(404).json({ error: 'Meal not found' });
-    await redisClient.set(`meal:${req.params.id}`, JSON.stringify(meal), 'EX', 3600);
+    await redisClient.set(`meal:${req.params.id}`, JSON.stringify(meal), 'EX', 180);
     res.json({ meal });
   } catch (error) {
     res.status(500).json({ error: error.message });

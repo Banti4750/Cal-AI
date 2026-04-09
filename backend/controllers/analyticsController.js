@@ -27,7 +27,7 @@ exports.getDailySummary = async (req, res) => {
       goal: req.user.dailyGoal,
       mealsCount: meals.length,
     };
-    await redisClient.set(cacheKey, JSON.stringify(result), 'EX', 1800);
+    await redisClient.set(cacheKey, JSON.stringify(result), 'EX', 180);
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -78,7 +78,7 @@ exports.getWeeklySummary = async (req, res) => {
     };
 
     const result = { days: dailyData, average: weeklyAvg, goal: req.user.dailyGoal };
-    await redisClient.set(cacheKey, JSON.stringify(result), 'EX', 1800);
+    await redisClient.set(cacheKey, JSON.stringify(result), 'EX', 180);
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -130,7 +130,7 @@ exports.getMonthlySummary = async (req, res) => {
       : { calories: 0, protein: 0, carbs: 0, fat: 0 };
 
     const result = { days: dailyData, average: monthlyAvg, goal: req.user.dailyGoal };
-    await redisClient.set(cacheKey, JSON.stringify(result), 'EX', 1800);
+    await redisClient.set(cacheKey, JSON.stringify(result), 'EX', 180);
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
