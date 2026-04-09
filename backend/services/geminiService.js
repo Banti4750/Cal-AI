@@ -37,7 +37,7 @@ async function analyzeFood(imagePath) {
   const mimeMap = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
   const mimeType = mimeMap[ext] || 'image/jpeg';
 
-  const result = await model.generateContent([
+  const content = [
     PROMPT,
     {
       inlineData: {
@@ -45,7 +45,24 @@ async function analyzeFood(imagePath) {
         mimeType,
       },
     },
-  ]);
+  ];
+
+  // Retry up to 3 times on 503/429 errors with exponential backoff
+  let result;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      result = await model.generateContent(content);
+      break;
+    } catch (err) {
+      if ((err.status === 503 || err.status === 429) && attempt < 2) {
+        const delay = Math.pow(2, attempt) * 1000; // 1s, 2s
+        console.log(`Gemini ${err.status}, retrying in ${delay}ms (attempt ${attempt + 1}/3)`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      } else {
+        throw err;
+      }
+    }
+  }
 
   const response = result.response;
   let text = response.text();
