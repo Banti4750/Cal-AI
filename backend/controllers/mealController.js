@@ -31,6 +31,8 @@ exports.createMeal = async (req, res) => {
 
     const keys = await redisClient.keys(`meals:${req.user._id}*`);
     if (keys.length) await redisClient.del(...keys);
+    const analyticsKeys = await redisClient.keys(`analytics:*:${req.user._id}:*`);
+    if (analyticsKeys.length) await redisClient.del(...analyticsKeys);
     res.status(201).json({ meal });
   } catch (error) {
     console.error('Meal creation error:', error);
@@ -87,6 +89,8 @@ exports.deleteMeal = async (req, res) => {
     await redisClient.del(`meal:${req.params.id}`);
     const keys = await redisClient.keys(`meals:${req.user._id}*`);
     if (keys.length) await redisClient.del(...keys);
+    const analyticsKeys = await redisClient.keys(`analytics:*:${req.user._id}:*`);
+    if (analyticsKeys.length) await redisClient.del(...analyticsKeys);
     res.json({ message: 'Meal deleted' });
   } catch (error) {
     res.status(500).json({ error: error.message });
