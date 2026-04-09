@@ -1,8 +1,13 @@
 const Meal = require('../models/Meal');
+const redisClient = require('../config/redis');
 
 exports.getDailySummary = async (req, res) => {
   try {
     const date = req.query.date || new Date().toISOString().split('T')[0];
+    const cacheKey = `analytics:daily:${req.user._id}:${date}`;
+
+    const cached = await redisClient.get(cacheKey);
+    if (cached) return res.json(JSON.parse(cached));
 
     const meals = await Meal.find({ user: req.user._id, date });
 
@@ -16,12 +21,14 @@ exports.getDailySummary = async (req, res) => {
       { calories: 0, protein: 0, carbs: 0, fat: 0 }
     );
 
-    res.json({
+    const result = {
       date,
       totals,
       goal: req.user.dailyGoal,
       mealsCount: meals.length,
-    });
+    };
+    await redisClient.set(cacheKey, JSON.stringify(result), 'EX', 1800);
+    res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -31,6 +38,11 @@ exports.getWeeklySummary = async (req, res) => {
   try {
     const { weekOf } = req.query;
     const startDate = weekOf ? new Date(weekOf) : getMonday(new Date());
+    const cacheKey = `analytics:weekly:${req.user._id}:${startDate.toISOString().split('T')[0]}`;
+
+    const cached = await redisClient.get(cacheKey);
+    if (cached) return res.json(JSON.parse(cached));
+
     const days = [];
 
     for (let i = 0; i < 7; i++) {
@@ -65,7 +77,9 @@ exports.getWeeklySummary = async (req, res) => {
       fat: Math.round(dailyData.reduce((s, d) => s + d.totals.fat, 0) / 7),
     };
 
-    res.json({ days: dailyData, average: weeklyAvg, goal: req.user.dailyGoal });
+    const result = { days: dailyData, average: weeklyAvg, goal: req.user.dailyGoal };
+    await redisClient.set(cacheKey, JSON.stringify(result), 'EX', 1800);
+    res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -75,6 +89,10 @@ exports.getMonthlySummary = async (req, res) => {
   try {
     const month = parseInt(req.query.month) || new Date().getMonth() + 1;
     const year = parseInt(req.query.year) || new Date().getFullYear();
+    const cacheKey = `analytics:monthly:${req.user._id}:${year}-${month}`;
+
+    const cached = await redisClient.get(cacheKey);
+    if (cached) return res.json(JSON.parse(cached));
 
     const daysInMonth = new Date(year, month, 0).getDate();
     const days = [];
@@ -111,7 +129,9 @@ exports.getMonthlySummary = async (req, res) => {
         }
       : { calories: 0, protein: 0, carbs: 0, fat: 0 };
 
-    res.json({ days: dailyData, average: monthlyAvg, goal: req.user.dailyGoal });
+    const result = { days: dailyData, average: monthlyAvg, goal: req.user.dailyGoal };
+    await redisClient.set(cacheKey, JSON.stringify(result), 'EX', 1800);
+    res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
