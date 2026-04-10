@@ -1,5 +1,7 @@
 # Cal AI - AI-Powered Calorie Tracker
 
+![Cal AI Landing Page](https://calai.edgeone.app/)
+
 A mobile calorie tracking app that uses AI to analyze food photos and automatically estimate calories and macronutrients. Built with React Native (Expo) and Node.js/Express.
 
 ## Features
